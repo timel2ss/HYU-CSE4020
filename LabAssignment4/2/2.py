@@ -46,11 +46,11 @@ def render(th):
     # draw vector v
     glBegin(GL_LINES)
     # v1
-    glVertex2fv((np.array([0., 0., 1.]))[:-1])
-    glVertex2fv((M1 @ np.array([0., 0., 1.]))[:-1])
+    glVertex2fv((M1 @ np.array([0., 0., 0.]))[:-1])
+    glVertex2fv((M1 @ np.array([.5, 0., 0.]))[:-1])
     # v2
-    glVertex2fv((np.array([0., 0., 1.]))[:-1])
-    glVertex2fv((M2 @ np.array([0., 0, 1.]))[:-1])
+    glVertex2fv((M2 @ np.array([0., 0., 0.]))[:-1])
+    glVertex2fv((M2 @ np.array([0., .5, 0.]))[:-1])
     glEnd()
 
 def main():
