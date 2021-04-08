@@ -3,21 +3,15 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-x_rotate = 0
-y_rotate = 0
 x_pos = 0
 y_pos = 0
 x_translate = 0
 y_translate = 0
-azimuth = 0
-elevation = 0
-distance = 0
-zoom = 50
 
-width = 600
-height = 600
-near = 5
-far = 1000
+azimuth = 45
+elevation = 45
+distance = 15
+zoom = 50
 
 leftMouse = False
 rightMouse = False
@@ -26,7 +20,7 @@ rightMouse = False
 toggle = True
 
 def render():
-    global gCamAng, gCamHeight, toggle
+    global toggle
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
     glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
@@ -34,17 +28,18 @@ def render():
     glLoadIdentity()
 
     if toggle == True:
-        gluPerspective(zoom, width / height, near, far)
+        gluPerspective(zoom, 1, 5, 1000)
     else:
-        tmp = .05 * zoom
-        glOrtho(-tmp, tmp, -tmp, tmp, near, far)
+        glOrtho(-.14* zoom, .14 * zoom, -.14 * zoom, .14 * zoom, 5, 1000)
 
-    glRotatef(y_rotate, 1., 0., 0.)
-    glRotatef(x_rotate, 0., 1., 0.)
     glTranslatef(x_translate, 0, 0)
     glTranslatef(0, y_translate, 0)
 
-    gluLookAt(5, 10, 5, 0,0,0, 0,1,0)
+    x_angle = np.radians(azimuth)
+    y_angle = np.radians(elevation)
+
+    pos = [distance * np.cos(y_angle) * np.sin(x_angle), distance * np.sin(y_angle), distance * np.cos(y_angle) * np.cos(x_angle)]
+    gluLookAt(pos[0], pos[1], pos[2], 0, 0, 0, 0, 1, 0)
 
     drawFrame()
     drawGridOnXZplane()
@@ -74,11 +69,10 @@ def drawFrame():
 
 def cursor_position_callback(window, xpos, ypos):
     global leftMouse, rightMouse, azimuth, elevation
-    global x_pos, y_pos, x_rotate, y_rotate, x_translate, y_translate
+    global x_pos, y_pos, x_translate, y_translate
     if leftMouse == True:
-        # TODO: fix orbit (arcball?)
-        x_rotate -= xpos - x_pos
-        y_rotate -= ypos - y_pos
+        azimuth -= xpos - x_pos
+        elevation -= ypos - y_pos
     elif rightMouse == True:
         x_translate += .02 * (xpos - x_pos)
         y_translate -= .02 * (ypos - y_pos)
