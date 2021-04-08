@@ -38,7 +38,7 @@ def render():
     x_angle = np.radians(azimuth)
     y_angle = np.radians(elevation)
 
-    pos = [distance * np.cos(y_angle) * np.sin(x_angle), distance * np.sin(y_angle), distance * np.cos(y_angle) * np.cos(x_angle)]
+    pos = [distance * np.cos(x_angle) * np.cos(y_angle), distance * np.sin(y_angle), distance * np.sin(x_angle) * np.cos(y_angle)]
     gluLookAt(pos[0], pos[1], pos[2], 0, 0, 0, 0, 1, 0)
 
     drawFrame()
@@ -71,8 +71,8 @@ def cursor_position_callback(window, xpos, ypos):
     global leftMouse, rightMouse, azimuth, elevation
     global x_pos, y_pos, x_translate, y_translate
     if leftMouse == True:
-        azimuth -= xpos - x_pos
-        elevation -= ypos - y_pos
+        azimuth += xpos - x_pos
+        elevation += ypos - y_pos
     elif rightMouse == True:
         x_translate += .02 * (xpos - x_pos)
         y_translate -= .02 * (ypos - y_pos)
