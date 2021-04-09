@@ -20,21 +20,25 @@ rightMouse = False
 toggle = True
 
 def render():
-    global toggle
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
     glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
 
     glLoadIdentity()
 
+    # toggle perspective/orthogonal projection by pressing 'v' key
     if toggle == True:
+        # Zooming on Perspective projection
         gluPerspective(zoom, 1, 5, 1000)
     else:
-        glOrtho(-.14* zoom, .14 * zoom, -.14 * zoom, .14 * zoom, 5, 1000)
+        # Zooming on Orthogonal projection
+        glOrtho(-.14 * zoom, .14 * zoom, -.14 * zoom, .14 * zoom, 5, 1000)
 
+    # Panning
     glTranslatef(x_translate, 0, 0)
     glTranslatef(0, y_translate, 0)
 
+    # Orbit
     x_angle = np.radians(azimuth)
     y_angle = np.radians(elevation)
 
@@ -68,12 +72,13 @@ def drawFrame():
     glEnd()
 
 def cursor_position_callback(window, xpos, ypos):
-    global leftMouse, rightMouse, azimuth, elevation
-    global x_pos, y_pos, x_translate, y_translate
+    global azimuth, elevation, x_pos, y_pos, x_translate, y_translate
     if leftMouse == True:
-        azimuth += xpos - x_pos
-        elevation += ypos - y_pos
+        # Orbit
+        azimuth += .4 * (xpos - x_pos)
+        elevation += .4 * (ypos - y_pos)
     elif rightMouse == True:
+        # Panning
         x_translate += .02 * (xpos - x_pos)
         y_translate -= .02 * (ypos - y_pos)
     x_pos = xpos
