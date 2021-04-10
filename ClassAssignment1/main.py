@@ -12,6 +12,7 @@ azimuth = 45
 elevation = 45
 distance = 15
 zoom = 50
+up = 1
 
 leftMouse = False
 rightMouse = False
@@ -20,6 +21,7 @@ rightMouse = False
 toggle = True
 
 def render():
+    global u, v, w
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
     glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
@@ -43,7 +45,7 @@ def render():
     y_angle = np.radians(elevation)
 
     pos = [distance * np.cos(x_angle) * np.cos(y_angle), distance * np.sin(y_angle), distance * np.sin(x_angle) * np.cos(y_angle)]
-    gluLookAt(pos[0], pos[1], pos[2], 0, 0, 0, 0, 1, 0)
+    gluLookAt(pos[0], pos[1], pos[2], 0, 0, 0, 0, up, 0)
 
     drawFrame()
     drawGridOnXZplane()
@@ -72,15 +74,22 @@ def drawFrame():
     glEnd()
 
 def cursor_position_callback(window, xpos, ypos):
-    global azimuth, elevation, x_pos, y_pos, x_translate, y_translate
+    global up, azimuth, elevation, x_pos, y_pos, x_translate, y_translate
     if leftMouse == True:
         # Orbit
         azimuth += .4 * (xpos - x_pos)
         elevation += .4 * (ypos - y_pos)
+
+        if np.cos(np.radians(elevation)) < 0:
+            up = -1
+        else:
+            up = 1
+
     elif rightMouse == True:
         # Panning
         x_translate += .02 * (xpos - x_pos)
         y_translate -= .02 * (ypos - y_pos)
+
     x_pos = xpos
     y_pos = ypos
 
