@@ -50,39 +50,39 @@ def key_callback(window, key, scancode, action, mods):
         elif key==glfw.KEY_Q:
             newM = np.identity(4)
             newM[:3, 3] = np.array([-.1, 0., 0.])
-            gComposedM = gComposedM @ newM
+            gComposedM = newM @ gComposedM
         elif key==glfw.KEY_E:
             newM = np.identity(4)
             newM[:3, 3] = np.array([.1, 0., 0.])
-            gComposedM = gComposedM @ newM
+            gComposedM = newM @ gComposedM
         elif key==glfw.KEY_A:
             t = np.radians(-10)
             newM = np.identity(4)
             newM[:3, :3] = np.array([[np.cos(t), 0., np.sin(t)],
                                      [0., 1., 0.],
                                      [-np.sin(t), 0., np.cos(t)]])
-            gComposedM = newM @ gComposedM
+            gComposedM = gComposedM @ newM
         elif key==glfw.KEY_D:
             t = np.radians(10)
             newM = np.identity(4)
             newM[:3, :3] = np.array([[np.cos(t), 0., np.sin(t)],
                                      [0., 1., 0.],
                                      [-np.sin(t), 0., np.cos(t)]])
-            gComposedM = newM @ gComposedM
+            gComposedM = gComposedM @ newM
         elif key==glfw.KEY_W:
             t = np.radians(-10)
             newM = np.identity(4)
             newM[:3, :3] = np.array([[1., 0., 0.],
                                      [0., np.cos(t), -np.sin(t)],
                                      [0., np.sin(t), np.cos(t)]])
-            gComposedM = newM @ gComposedM
+            gComposedM = gComposedM @ newM
         elif key==glfw.KEY_S:
             t = np.radians(10)
             newM = np.identity(4)
             newM[:3, :3] = np.array([[1., 0., 0.],
                                      [0., np.cos(t), -np.sin(t)],
                                      [0., np.sin(t), np.cos(t)]])
-            gComposedM = newM @ gComposedM
+            gComposedM = gComposedM @ newM
 
 
 def main():
