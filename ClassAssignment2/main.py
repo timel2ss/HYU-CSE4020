@@ -2,6 +2,7 @@ import glfw
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import ctypes
 
 x_pos = 0
 y_pos = 0
@@ -21,24 +22,28 @@ leftMouse = False
 rightMouse = False
 
 drawFlag = False
-gVertexArrayIndexed = None
 gIndexArray3v = None
 gIndexArray4v = None
 gIndexArrayPolygon = None
 
 # True: perspective projection, False: orthogonal projection
-toggle = True
+projection = True
+# True: solid mode, False: wireframe
+filled = False
 
 def render():
     global u, v, w
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
-    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
+    if filled:
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
+    else:
+        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
 
     glLoadIdentity()
 
     # toggle perspective/orthogonal projection by pressing 'v' key
-    if toggle == True:
+    if projection == True:
         # Zooming on Perspective projection
         gluPerspective(zoom, 1, 5, 1000)
     else:
@@ -59,9 +64,40 @@ def render():
     drawFrame()
     drawGridOnXZplane()
 
+    glEnable(GL_LIGHTING)
+    glEnable(GL_LIGHT0)
+    glEnable(GL_LIGHT1)
+    glEnable(GL_NORMALIZE)
+
+    lightPos0 = (5., 5., 5., 1.)
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos0)
+
+    lightColor0 = (1., 1., 0., 1.)
+    ambientLightColor0 = (.1, .1, .1, 1.)
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor0)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor0)
+
+    lightPos1 = (-5., 10., -5., 1.)
+    glLightfv(GL_LIGHT1, GL_POSITION, lightPos1)
+
+    lightColor1 = (0., 1., 1., 1.)
+    ambientLightColor1 = (.1, .1, .1, 1.)
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor1)
+    glLightfv(GL_LIGHT1, GL_SPECULAR, lightColor1)
+    glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor1)
+
+    objectColor = (1., 1., 1., 1.)
+    specularObjectColor = (1., 1., 1., 1.)
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
+    glMaterialfv(GL_FRONT, GL_SHININESS, 10)
+    glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
+    
     if drawFlag:
         glColor3ub(0,0,255)
         drawElements()
+    
+    glDisable(GL_LIGHTING)
 
 def drawGridOnXZplane():
     glBegin(GL_LINES)
@@ -88,10 +124,20 @@ def drawFrame():
 
 def drawElements():
     glEnableClientState(GL_VERTEX_ARRAY)
-    glVertexPointer(3, GL_FLOAT, 3*gVertexArrayIndexed.itemsize, gVertexArrayIndexed)
-    glDrawElements(GL_TRIANGLES, gIndexArray3v.size, GL_UNSIGNED_INT, gIndexArray3v)
-    glDrawElements(GL_QUADS, gIndexArray4v.size, GL_UNSIGNED_INT, gIndexArray4v)
-    glDrawElements(GL_POLYGON, gIndexArrayPolygon.size, GL_UNSIGNED_INT, gIndexArrayPolygon)
+    glEnableClientState(GL_NORMAL_ARRAY)
+
+    glNormalPointer(GL_FLOAT, 6*gIndexArray3v.itemsize, gIndexArray3v)
+    glVertexPointer(3, GL_FLOAT,6*gIndexArray3v.itemsize, ctypes.c_void_p(gIndexArray3v.ctypes.data + 3*gIndexArray3v.itemsize))
+    glDrawArrays(GL_TRIANGLES, 0, int(gIndexArray3v.size/6))
+
+    glNormalPointer(GL_FLOAT, 6*gIndexArray4v.itemsize, gIndexArray4v)
+    glVertexPointer(3, GL_FLOAT, 6*gIndexArray4v.itemsize, ctypes.c_void_p(gIndexArray4v.ctypes.data + 3*gIndexArray4v.itemsize))
+    glDrawArrays(GL_QUADS, 0, int(gIndexArray4v.size/6))
+
+    for varr in gIndexArrayPolygon:
+        glNormalPointer(GL_FLOAT, 6*varr.itemsize, varr)
+        glVertexPointer(3, GL_FLOAT, 6*varr.itemsize, ctypes.c_void_p(varr.ctypes.data + 3*varr.itemsize))
+        glDrawArrays(GL_POLYGON, 0, int(varr.size/6))
 
 def cursor_position_callback(window, xpos, ypos):
     global origin, up, azimuth, elevation, x_pos, y_pos
@@ -134,16 +180,21 @@ def scroll_callback(window, xoffset, yoffset):
         zoom = 5
     
 def key_callback(window, key, scancode, action, mods):
-    global toggle
+    global projection, filled
     if action==glfw.PRESS or action==glfw.REPEAT:
         if key == glfw.KEY_V:
-            if toggle == True:
-                toggle = False
+            if projection == True:
+                projection = False
             else:
-                toggle = True
+                projection = True
+        if key == glfw.KEY_Z:
+            if filled == True:
+                filled = False
+            else:
+                filled = True
 
 def drop_callback(window, paths):
-    global gVertexArrayIndexed, gIndexArray3v, gIndexArray4v, gIndexArrayPolygon, drawFlag
+    global gIndexArray3v, gIndexArray4v, gIndexArrayPolygon, drawFlag
 
     vertex_array = []
     normal_array = []
@@ -175,26 +226,42 @@ def drop_callback(window, paths):
             if partition[0] == 'f':
                 total_face += 1
 
-                index = tuple(int(i.split("//")[0]) - 1 for i in partition[1:])
-
                 length = len(partition) - 1
                 if length == 3:
                     face_3v += 1
-                    index_3v_array.append(index)
                 elif length == 4:
                     face_4v += 1
-                    index_4v_array.append(index)
                 elif length > 4:
                     face_over_4 += 1
-                    index_polygon_array.append(index)
+
+                #TODO: refactoring
+                temp = []
+
+                for i in partition[1:]:
+                    index_normal = normal_array[int(i.split("/")[-1]) - 1]
+                    index_vertex = vertex_array[int(i.split("/")[0]) - 1]
+
+                    if length == 3:
+                        index_3v_array.append(index_normal)
+                        index_3v_array.append(index_vertex)
+                    elif length == 4:
+                        index_4v_array.append(index_normal)
+                        index_4v_array.append(index_vertex)
+                    elif length > 4:
+                        temp.append(index_normal)
+                        temp.append(index_vertex)
+                        if len(temp)/2 == length:
+                            temp = np.array(temp, 'float32')
+                            index_polygon_array.append(temp)
+                            temp = []
+                            
 
             if not line:
                 break
 
-    gVertexArrayIndexed = np.array(vertex_array, 'float32')
-    gIndexArray3v = np.array(index_3v_array)
-    gIndexArray4v = np.array(index_4v_array)
-    gIndexArrayPolygon = np.array(index_polygon_array)
+    gIndexArray3v = np.array(index_3v_array, 'float32')
+    gIndexArray4v = np.array(index_4v_array, 'float32')
+    gIndexArrayPolygon = index_polygon_array
     drawFlag = True
 
     print("File name: ", fileName)
