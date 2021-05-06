@@ -2,7 +2,6 @@ import glfw
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import ctypes
 
 x_pos = 0
 y_pos = 0
@@ -23,8 +22,11 @@ rightMouse = False
 
 drawFlag = False
 gIndexArray3v = None
-gIndexArray4v = None
+gIndexArray3vn = None
+gIndexArray3v = None
+gIndexArray4vn = None
 gIndexArrayPolygon = None
+gIndexArrayPolygonn = None
 
 # True: perspective projection, False: orthogonal projection
 projection = True
@@ -126,18 +128,18 @@ def drawElements():
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
 
-    glNormalPointer(GL_FLOAT, 6*gIndexArray3v.itemsize, gIndexArray3v)
-    glVertexPointer(3, GL_FLOAT,6*gIndexArray3v.itemsize, ctypes.c_void_p(gIndexArray3v.ctypes.data + 3*gIndexArray3v.itemsize))
-    glDrawArrays(GL_TRIANGLES, 0, int(gIndexArray3v.size/6))
+    glNormalPointer(GL_FLOAT, 3*gIndexArray3vn.itemsize, gIndexArray3vn)
+    glVertexPointer(3, GL_FLOAT,3*gIndexArray3v.itemsize, gIndexArray3v)
+    glDrawArrays(GL_TRIANGLES, 0, int(gIndexArray3v.size/3))
 
-    glNormalPointer(GL_FLOAT, 6*gIndexArray4v.itemsize, gIndexArray4v)
-    glVertexPointer(3, GL_FLOAT, 6*gIndexArray4v.itemsize, ctypes.c_void_p(gIndexArray4v.ctypes.data + 3*gIndexArray4v.itemsize))
-    glDrawArrays(GL_QUADS, 0, int(gIndexArray4v.size/6))
+    glNormalPointer(GL_FLOAT, 3*gIndexArray4vn.itemsize, gIndexArray4vn)
+    glVertexPointer(3, GL_FLOAT, 3*gIndexArray4v.itemsize, gIndexArray4v)
+    glDrawArrays(GL_QUADS, 0, int(gIndexArray4v.size/3))
 
-    for varr in gIndexArrayPolygon:
-        glNormalPointer(GL_FLOAT, 6*varr.itemsize, varr)
-        glVertexPointer(3, GL_FLOAT, 6*varr.itemsize, ctypes.c_void_p(varr.ctypes.data + 3*varr.itemsize))
-        glDrawArrays(GL_POLYGON, 0, int(varr.size/6))
+    for i in range(len(gIndexArrayPolygon)):
+        glNormalPointer(GL_FLOAT, 3*gIndexArrayPolygonn[i].itemsize, gIndexArrayPolygonn[i])
+        glVertexPointer(3, GL_FLOAT, 3*gIndexArrayPolygon[i].itemsize, gIndexArrayPolygon[i])
+        glDrawArrays(GL_POLYGON, 0, int(gIndexArrayPolygon[i].size/3))
 
 def cursor_position_callback(window, xpos, ypos):
     global origin, up, azimuth, elevation, x_pos, y_pos
@@ -194,13 +196,16 @@ def key_callback(window, key, scancode, action, mods):
                 filled = True
 
 def drop_callback(window, paths):
-    global gIndexArray3v, gIndexArray4v, gIndexArrayPolygon, drawFlag
+    global gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, drawFlag
 
     vertex_array = []
     normal_array = []
     index_3v_array = []
+    index_3vn_array = []
     index_4v_array = []
+    index_4vn_array = []
     index_polygon_array = []
+    index_polygonn_array = []
 
     total_face = 0
     face_3v = 0
@@ -235,33 +240,41 @@ def drop_callback(window, paths):
                     face_over_4 += 1
 
                 #TODO: refactoring
-                temp = []
+                tempN = []
+                tempV = []
 
                 for i in partition[1:]:
                     index_normal = normal_array[int(i.split("/")[-1]) - 1]
                     index_vertex = vertex_array[int(i.split("/")[0]) - 1]
 
                     if length == 3:
-                        index_3v_array.append(index_normal)
+                        index_3vn_array.append(index_normal)
                         index_3v_array.append(index_vertex)
                     elif length == 4:
-                        index_4v_array.append(index_normal)
+                        index_4vn_array.append(index_normal)
                         index_4v_array.append(index_vertex)
                     elif length > 4:
-                        temp.append(index_normal)
-                        temp.append(index_vertex)
-                        if len(temp)/2 == length:
-                            temp = np.array(temp, 'float32')
-                            index_polygon_array.append(temp)
-                            temp = []
+                        tempN.append(index_normal)
+                        tempV.append(index_vertex)
+                        if len(tempV) == length:
+                            tempN = np.array(tempN, 'float32')
+                            tempV = np.array(tempV, 'float32')
                             
-
+                            index_polygonn_array.append(tempN)
+                            index_polygon_array.append(tempV)
+                            
+                            tempN = []
+                            tempV = []
+                            
             if not line:
                 break
 
     gIndexArray3v = np.array(index_3v_array, 'float32')
+    gIndexArray3vn = np.array(index_3vn_array, 'float32')
     gIndexArray4v = np.array(index_4v_array, 'float32')
+    gIndexArray4vn = np.array(index_4vn_array, 'float32')
     gIndexArrayPolygon = index_polygon_array
+    gIndexArrayPolygonn = index_polygonn_array
     drawFlag = True
 
     print("File name: ", fileName)
