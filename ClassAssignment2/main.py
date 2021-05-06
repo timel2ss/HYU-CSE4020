@@ -217,8 +217,10 @@ def drop_callback(window, paths):
 
         while True:
             line = f.readline()
-            partition = line.split(" ")
-
+            partition = line.split()
+                   
+            if not line:
+                break
             if line.startswith('#'):
                 continue
             if not partition:
@@ -265,9 +267,7 @@ def drop_callback(window, paths):
                             
                             tempN = []
                             tempV = []
-                            
-            if not line:
-                break
+
 
     gIndexArray3v = np.array(index_3v_array, 'float32')
     gIndexArray3vn = np.array(index_3vn_array, 'float32')
