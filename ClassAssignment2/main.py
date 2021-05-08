@@ -28,10 +28,14 @@ gIndexArray4vn = None
 gIndexArrayPolygon = None
 gIndexArrayPolygonn = None
 
+animationObject = []
+
 # True: perspective projection, False: orthogonal projection
 projection = True
 # True: solid mode, False: wireframe
 filled = False
+# True: animation on, False: animation off
+hierarchy = False
 
 def render():
     global u, v, w
@@ -75,16 +79,16 @@ def render():
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos0)
 
     lightColor0 = (1., 1., 0., 1.)
-    ambientLightColor0 = (.1, .1, .1, 1.)
+    ambientLightColor0 = (.1, .1, 0., 1.)
     glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0)
     glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor0)
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor0)
 
-    lightPos1 = (-5., 10., -5., 1.)
+    lightPos1 = (-5., 5., -5., 1.)
     glLightfv(GL_LIGHT1, GL_POSITION, lightPos1)
 
     lightColor1 = (0., 1., 1., 1.)
-    ambientLightColor1 = (.1, .1, .1, 1.)
+    ambientLightColor1 = (0., .1, .1, 1.)
     glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor1)
     glLightfv(GL_LIGHT1, GL_SPECULAR, lightColor1)
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor1)
@@ -95,8 +99,9 @@ def render():
     glMaterialfv(GL_FRONT, GL_SHININESS, 10)
     glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
     
-    if drawFlag:
-        glColor3ub(0,0,255)
+    if hierarchy == True:
+        drawAnimation()
+    if drawFlag == True:
         drawElements()
     
     glDisable(GL_LIGHTING)
@@ -141,6 +146,54 @@ def drawElements():
         glVertexPointer(3, GL_FLOAT, 3*gIndexArrayPolygon[i].itemsize, gIndexArrayPolygon[i])
         glDrawArrays(GL_POLYGON, 0, int(gIndexArrayPolygon[i].size/3))
 
+def drawObject(drawElement):
+    #(gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn)
+    glEnableClientState(GL_VERTEX_ARRAY)
+    glEnableClientState(GL_NORMAL_ARRAY)
+
+    glNormalPointer(GL_FLOAT, 3*drawElement[1].itemsize, drawElement[1])
+    glVertexPointer(3, GL_FLOAT,3*drawElement[0].itemsize, drawElement[0])
+    glDrawArrays(GL_TRIANGLES, 0, int(drawElement[0].size/3))
+
+    glNormalPointer(GL_FLOAT, 3*drawElement[3].itemsize, drawElement[3])
+    glVertexPointer(3, GL_FLOAT, 3*drawElement[2].itemsize, drawElement[2])
+    glDrawArrays(GL_QUADS, 0, int(drawElement[2].size/3))
+
+    for i in range(len(drawElement[4])):
+        glNormalPointer(GL_FLOAT, 3*drawElement[5][i].itemsize, drawElement[5][i])
+        glVertexPointer(3, GL_FLOAT, 3*drawElement[4][i].itemsize, drawElement[4][i])
+        glDrawArrays(GL_POLYGON, 0, int(drawElement[4][i].size/3))
+
+def drawAnimation():
+    t = glfw.get_time()
+    glPushMatrix()
+    glRotatef(t * (180 / np.pi), 0, 1, 0)
+
+    glPushMatrix()
+    glScalef(100, 100, 100)
+    drawObject(animationObject[0])
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(3, 1.5, 0)
+    glRotatef(t * (180/np.pi), 0, 1, 0)
+
+    glPushMatrix()
+    glScalef(.02, .02, .02)
+    glRotatef(-90, 1, 0, 0)
+    drawObject(animationObject[1])
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(0, 1.5, 0)
+    glRotatef(-50, 1, 0, 0)
+    drawObject(animationObject[2])
+    glPopMatrix()
+
+    glPopMatrix()
+    glPopMatrix()
+
+
 def cursor_position_callback(window, xpos, ypos):
     global origin, up, azimuth, elevation, x_pos, y_pos
     if leftMouse == True:
@@ -182,7 +235,7 @@ def scroll_callback(window, xoffset, yoffset):
         zoom = 5
     
 def key_callback(window, key, scancode, action, mods):
-    global projection, filled
+    global projection, filled, hierarchy, drawFlag, animationObject
     if action==glfw.PRESS or action==glfw.REPEAT:
         if key == glfw.KEY_V:
             if projection == True:
@@ -194,6 +247,16 @@ def key_callback(window, key, scancode, action, mods):
                 filled = False
             else:
                 filled = True
+        if key == glfw.KEY_H:
+            if hierarchy == True:
+                hierarchy = False
+                animationObject = []
+            else:
+                hierarchy = True
+                drawFlag = False
+                animationObject.append(obj_parse("Plate.obj"))
+                animationObject.append(obj_parse("Spinning_Teacup.obj"))
+                animationObject.append(obj_parse("spoon.obj"))
 
 def drop_callback(window, paths):
     global gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, drawFlag
@@ -283,6 +346,94 @@ def drop_callback(window, paths):
     print("Number of faces with 4 vertices: ", face_4v)
     print("Number of faces with more than 4 vertices: ", face_over_4, end="\n\n")
 
+def obj_parse(path):
+    vertex_array = []
+    normal_array = []
+    index_3v_array = []
+    index_3vn_array = []
+    index_4v_array = []
+    index_4vn_array = []
+    index_polygon_array = []
+    index_polygonn_array = []
+
+    total_face = 0
+    face_3v = 0
+    face_4v = 0
+    face_over_4 = 0
+
+    with open(path, "r") as f:
+        fileName = path.split("\\")[-1]
+
+        while True:
+            line = f.readline()
+            partition = line.split()
+                   
+            if not line:
+                break
+            if line.startswith('#'):
+                continue
+            if not partition:
+                continue
+
+            if partition[0] == 'v':
+                vertex_array.append(tuple(map(float,(partition[1], partition[2], partition[3]))))
+            if partition[0] == 'vn':
+                normal_array.append(tuple(map(float,(partition[1], partition[2], partition[3]))))
+            if partition[0] == 'f':
+                total_face += 1
+
+                length = len(partition) - 1
+                if length == 3:
+                    face_3v += 1
+                elif length == 4:
+                    face_4v += 1
+                elif length > 4:
+                    face_over_4 += 1
+
+                #TODO: refactoring
+                tempN = []
+                tempV = []
+
+                for i in partition[1:]:
+                    index_normal = normal_array[int(i.split("/")[-1]) - 1]
+                    index_vertex = vertex_array[int(i.split("/")[0]) - 1]
+
+                    if length == 3:
+                        index_3vn_array.append(index_normal)
+                        index_3v_array.append(index_vertex)
+                    elif length == 4:
+                        index_4vn_array.append(index_normal)
+                        index_4v_array.append(index_vertex)
+                    elif length > 4:
+                        tempN.append(index_normal)
+                        tempV.append(index_vertex)
+                        if len(tempV) == length:
+                            tempN = np.array(tempN, 'float32')
+                            tempV = np.array(tempV, 'float32')
+                            
+                            index_polygonn_array.append(tempN)
+                            index_polygon_array.append(tempV)
+                            
+                            tempN = []
+                            tempV = []
+
+
+    gIndexArray3v = np.array(index_3v_array, 'float32')
+    gIndexArray3vn = np.array(index_3vn_array, 'float32')
+    gIndexArray4v = np.array(index_4v_array, 'float32')
+    gIndexArray4vn = np.array(index_4vn_array, 'float32')
+    gIndexArrayPolygon = index_polygon_array
+    gIndexArrayPolygonn = index_polygonn_array
+    drawFlag = True
+
+    print("File name: ", fileName)
+    print("Total number of faces: ", total_face)
+    print("Number of faces with 3 vertices: ", face_3v)
+    print("Number of faces with 4 vertices: ", face_4v)
+    print("Number of faces with more than 4 vertices: ", face_over_4, end="\n\n")
+
+    return (gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn)
+
 def main():
     # Initialize the library
     if not glfw.init():
@@ -300,6 +451,7 @@ def main():
     glfw.set_scroll_callback(window, scroll_callback)
     glfw.set_key_callback(window, key_callback)
     glfw.set_drop_callback(window, drop_callback)
+    glfw.swap_interval(1)
 
     # Loop until the user closes the window
     while not glfw.window_should_close(window):
