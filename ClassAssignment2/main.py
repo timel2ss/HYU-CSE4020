@@ -102,7 +102,7 @@ def render():
     if hierarchy == True:
         drawAnimation()
     if drawFlag == True:
-        drawElements()
+        drawObject((gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn))
     
     glDisable(GL_LIGHTING)
 
@@ -125,29 +125,11 @@ def drawFrame():
     glVertex3fv(np.array([0.,0.,0.]))
     glVertex3fv(np.array([0.,1.,0.]))
     glColor3ub(0, 0, 255)
-    glVertex3fv(np.array([0.,0.,0]))
+    glVertex3fv(np.array([0.,0.,0.]))
     glVertex3fv(np.array([0.,0.,1.]))
     glEnd()
 
-def drawElements():
-    glEnableClientState(GL_VERTEX_ARRAY)
-    glEnableClientState(GL_NORMAL_ARRAY)
-
-    glNormalPointer(GL_FLOAT, 3*gIndexArray3vn.itemsize, gIndexArray3vn)
-    glVertexPointer(3, GL_FLOAT,3*gIndexArray3v.itemsize, gIndexArray3v)
-    glDrawArrays(GL_TRIANGLES, 0, int(gIndexArray3v.size/3))
-
-    glNormalPointer(GL_FLOAT, 3*gIndexArray4vn.itemsize, gIndexArray4vn)
-    glVertexPointer(3, GL_FLOAT, 3*gIndexArray4v.itemsize, gIndexArray4v)
-    glDrawArrays(GL_QUADS, 0, int(gIndexArray4v.size/3))
-
-    for i in range(len(gIndexArrayPolygon)):
-        glNormalPointer(GL_FLOAT, 3*gIndexArrayPolygonn[i].itemsize, gIndexArrayPolygonn[i])
-        glVertexPointer(3, GL_FLOAT, 3*gIndexArrayPolygon[i].itemsize, gIndexArrayPolygon[i])
-        glDrawArrays(GL_POLYGON, 0, int(gIndexArrayPolygon[i].size/3))
-
 def drawObject(drawElement):
-    #(gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn)
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
 
@@ -192,7 +174,6 @@ def drawAnimation():
 
     glPopMatrix()
     glPopMatrix()
-
 
 def cursor_position_callback(window, xpos, ypos):
     global origin, up, azimuth, elevation, x_pos, y_pos
@@ -260,91 +241,8 @@ def key_callback(window, key, scancode, action, mods):
 
 def drop_callback(window, paths):
     global gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, drawFlag
-
-    vertex_array = []
-    normal_array = []
-    index_3v_array = []
-    index_3vn_array = []
-    index_4v_array = []
-    index_4vn_array = []
-    index_polygon_array = []
-    index_polygonn_array = []
-
-    total_face = 0
-    face_3v = 0
-    face_4v = 0
-    face_over_4 = 0
-
-    with open(paths[0], "r") as f:
-        fileName = paths[0].split("\\")[-1]
-
-        while True:
-            line = f.readline()
-            partition = line.split()
-                   
-            if not line:
-                break
-            if line.startswith('#'):
-                continue
-            if not partition:
-                continue
-
-            if partition[0] == 'v':
-                vertex_array.append(tuple(map(float,(partition[1], partition[2], partition[3]))))
-            if partition[0] == 'vn':
-                normal_array.append(tuple(map(float,(partition[1], partition[2], partition[3]))))
-            if partition[0] == 'f':
-                total_face += 1
-
-                length = len(partition) - 1
-                if length == 3:
-                    face_3v += 1
-                elif length == 4:
-                    face_4v += 1
-                elif length > 4:
-                    face_over_4 += 1
-
-                #TODO: refactoring
-                tempN = []
-                tempV = []
-
-                for i in partition[1:]:
-                    index_normal = normal_array[int(i.split("/")[-1]) - 1]
-                    index_vertex = vertex_array[int(i.split("/")[0]) - 1]
-
-                    if length == 3:
-                        index_3vn_array.append(index_normal)
-                        index_3v_array.append(index_vertex)
-                    elif length == 4:
-                        index_4vn_array.append(index_normal)
-                        index_4v_array.append(index_vertex)
-                    elif length > 4:
-                        tempN.append(index_normal)
-                        tempV.append(index_vertex)
-                        if len(tempV) == length:
-                            tempN = np.array(tempN, 'float32')
-                            tempV = np.array(tempV, 'float32')
-                            
-                            index_polygonn_array.append(tempN)
-                            index_polygon_array.append(tempV)
-                            
-                            tempN = []
-                            tempV = []
-
-
-    gIndexArray3v = np.array(index_3v_array, 'float32')
-    gIndexArray3vn = np.array(index_3vn_array, 'float32')
-    gIndexArray4v = np.array(index_4v_array, 'float32')
-    gIndexArray4vn = np.array(index_4vn_array, 'float32')
-    gIndexArrayPolygon = index_polygon_array
-    gIndexArrayPolygonn = index_polygonn_array
+    gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn = obj_parse(paths[0])
     drawFlag = True
-
-    print("File name: ", fileName)
-    print("Total number of faces: ", total_face)
-    print("Number of faces with 3 vertices: ", face_3v)
-    print("Number of faces with 4 vertices: ", face_4v)
-    print("Number of faces with more than 4 vertices: ", face_over_4, end="\n\n")
 
 def obj_parse(path):
     vertex_array = []
@@ -363,15 +261,15 @@ def obj_parse(path):
 
     with open(path, "r") as f:
         fileName = path.split("\\")[-1]
-
+        
         while True:
             line = f.readline()
-            partition = line.split()
-                   
             if not line:
                 break
             if line.startswith('#'):
                 continue
+
+            partition = line.split()
             if not partition:
                 continue
 
@@ -390,13 +288,13 @@ def obj_parse(path):
                 elif length > 4:
                     face_over_4 += 1
 
-                #TODO: refactoring
                 tempN = []
                 tempV = []
 
                 for i in partition[1:]:
-                    index_normal = normal_array[int(i.split("/")[-1]) - 1]
-                    index_vertex = vertex_array[int(i.split("/")[0]) - 1]
+                    face_parse = i.split('/')
+                    index_normal = normal_array[int(face_parse[-1]) - 1]
+                    index_vertex = vertex_array[int(face_parse[0]) - 1]
 
                     if length == 3:
                         index_3vn_array.append(index_normal)
@@ -410,10 +308,10 @@ def obj_parse(path):
                         if len(tempV) == length:
                             tempN = np.array(tempN, 'float32')
                             tempV = np.array(tempV, 'float32')
-                            
+
                             index_polygonn_array.append(tempN)
                             index_polygon_array.append(tempV)
-                            
+
                             tempN = []
                             tempV = []
 
@@ -424,7 +322,6 @@ def obj_parse(path):
     gIndexArray4vn = np.array(index_4vn_array, 'float32')
     gIndexArrayPolygon = index_polygon_array
     gIndexArrayPolygonn = index_polygonn_array
-    drawFlag = True
 
     print("File name: ", fileName)
     print("Total number of faces: ", total_face)
