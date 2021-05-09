@@ -27,10 +27,6 @@ gIndexArray3v = None
 gIndexArray4vn = None
 gIndexArrayPolygon = None
 gIndexArrayPolygonn = None
-gIndexArray3vnCal = None
-gIndexArray4vnCal = None
-gIndexArrayPolynCal = None
-
 
 animationObject = []
 
@@ -40,8 +36,6 @@ projection = True
 filled = False
 # True: animation on, False: animation off
 hierarchy = False
-# True: smooth shading, False: using vn in obj file
-shading = False
 
 def render():
     global u, v, w
@@ -52,7 +46,6 @@ def render():
     else:
         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
 
-    glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
 
     # toggle perspective/orthogonal projection by pressing 'v' key
@@ -62,9 +55,6 @@ def render():
     else:
         # Zooming on Orthogonal projection
         glOrtho(-.14 * zoom, .14 * zoom, -.14 * zoom, .14 * zoom, 5, 1000)
-
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
 
     # Panning and Orbit
     x_angle = np.radians(azimuth)
@@ -112,7 +102,7 @@ def render():
     if hierarchy == True:
         drawAnimation()
     if drawFlag == True:
-        drawObject((gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, gIndexArray3vnCal, gIndexArray4vnCal, gIndexArrayPolynCal))
+        drawObject((gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn))
     
     glDisable(GL_LIGHTING)
 
@@ -143,25 +133,16 @@ def drawObject(drawElement):
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
 
-    if shading == False:
-        glNormalPointer(GL_FLOAT, 3*drawElement[1].itemsize, drawElement[1])
-    else:
-        glNormalPointer(GL_FLOAT, 3*drawElement[6].itemsize, drawElement[6])
+    glNormalPointer(GL_FLOAT, 3*drawElement[1].itemsize, drawElement[1])
     glVertexPointer(3, GL_FLOAT,3*drawElement[0].itemsize, drawElement[0])
     glDrawArrays(GL_TRIANGLES, 0, int(drawElement[0].size/3))
 
-    if shading == False:
-        glNormalPointer(GL_FLOAT, 3*drawElement[3].itemsize, drawElement[3])
-    else:
-        glNormalPointer(GL_FLOAT, 3*drawElement[7].itemsize, drawElement[7])
+    glNormalPointer(GL_FLOAT, 3*drawElement[3].itemsize, drawElement[3])
     glVertexPointer(3, GL_FLOAT, 3*drawElement[2].itemsize, drawElement[2])
     glDrawArrays(GL_QUADS, 0, int(drawElement[2].size/3))
 
     for i in range(len(drawElement[4])):
-        if shading == False:
-            glNormalPointer(GL_FLOAT, 3*drawElement[5][i].itemsize, drawElement[5][i])
-        else:
-            glNormalPointer(GL_FLOAT, 3*drawElement[8].itemsize, drawElement[8])
+        glNormalPointer(GL_FLOAT, 3*drawElement[5][i].itemsize, drawElement[5][i])
         glVertexPointer(3, GL_FLOAT, 3*drawElement[4][i].itemsize, drawElement[4][i])
         glDrawArrays(GL_POLYGON, 0, int(drawElement[4][i].size/3))
 
@@ -190,59 +171,8 @@ def drawAnimation():
     glRotatef(-50, 1, 0, 0)
     drawObject(animationObject[2])
     glPopMatrix()
-    glPopMatrix()
 
-    glPushMatrix()
-    glTranslatef(-3, 1.5, 0)
-    glRotatef(t * (180/np.pi), 0, 1, 0)
-
-    glPushMatrix()
-    glScalef(.02, .02, .02)
-    glRotatef(-90, 1, 0, 0)
-    drawObject(animationObject[1])
     glPopMatrix()
-
-    glPushMatrix()
-    glTranslatef(0, 1.5, 0)
-    glRotatef(-50, 1, 0, 0)
-    drawObject(animationObject[2])
-    glPopMatrix()
-    glPopMatrix()
-
-    glPushMatrix()
-    glTranslatef(0, 1.5, 3)
-    glRotatef(t * (180/np.pi), 0, 1, 0)
-
-    glPushMatrix()
-    glScalef(.02, .02, .02)
-    glRotatef(-90, 1, 0, 0)
-    drawObject(animationObject[1])
-    glPopMatrix()
-
-    glPushMatrix()
-    glTranslatef(0, 1.5, 0)
-    glRotatef(-50, 1, 0, 0)
-    drawObject(animationObject[2])
-    glPopMatrix()
-    glPopMatrix()
-
-    glPushMatrix()
-    glTranslatef(0, 1.5, -3)
-    glRotatef(t * (180/np.pi), 0, 1, 0)
-
-    glPushMatrix()
-    glScalef(.02, .02, .02)
-    glRotatef(-90, 1, 0, 0)
-    drawObject(animationObject[1])
-    glPopMatrix()
-
-    glPushMatrix()
-    glTranslatef(0, 1.5, 0)
-    glRotatef(-50, 1, 0, 0)
-    drawObject(animationObject[2])
-    glPopMatrix()
-    glPopMatrix()
-
     glPopMatrix()
 
 def cursor_position_callback(window, xpos, ypos):
@@ -286,7 +216,7 @@ def scroll_callback(window, xoffset, yoffset):
         zoom = 5
     
 def key_callback(window, key, scancode, action, mods):
-    global projection, filled, hierarchy, drawFlag, animationObject, shading
+    global projection, filled, hierarchy, drawFlag, animationObject
     if action==glfw.PRESS or action==glfw.REPEAT:
         if key == glfw.KEY_V:
             if projection == True:
@@ -308,19 +238,13 @@ def key_callback(window, key, scancode, action, mods):
                 animationObject.append(obj_parse("Plate.obj"))
                 animationObject.append(obj_parse("Spinning_Teacup.obj"))
                 animationObject.append(obj_parse("spoon.obj"))
-        if key == glfw.KEY_S:
-            if shading == True:
-                shading = False
-            else:
-                shading = True
 
 def drop_callback(window, paths):
-    global gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, gIndexArray3vnCal, gIndexArray4vnCal, gIndexArrayPolynCal, drawFlag
-    gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, gIndexArray3vnCal, gIndexArray4vnCal, gIndexArrayPolynCal = obj_parse(paths[0])
+    global gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, drawFlag
+    gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn = obj_parse(paths[0])
     drawFlag = True
 
 def obj_parse(path):
-    global shading
     vertex_array = []
     normal_array = []
     index_3v_array = []
@@ -329,13 +253,6 @@ def obj_parse(path):
     index_4vn_array = []
     index_polygon_array = []
     index_polygonn_array = []
-    iarr3v = []
-    iarr4v = []
-    iarrPoly = []
-    normal_cal = []
-    normal_cal_3v = []
-    normal_cal_4v = []
-    normal_cal_poly = []
 
     total_face = 0
     face_3v = 0
@@ -344,7 +261,7 @@ def obj_parse(path):
 
     with open(path, "r") as f:
         fileName = path.split("\\")[-1]
-
+        
         while True:
             line = f.readline()
             if not line:
@@ -371,7 +288,6 @@ def obj_parse(path):
                 elif length > 4:
                     face_over_4 += 1
 
-                tempI = []
                 tempN = []
                 tempV = []
 
@@ -381,82 +297,24 @@ def obj_parse(path):
                     index_vertex = vertex_array[int(face_parse[0]) - 1]
 
                     if length == 3:
-                        iarr3v.append(int(face_parse[0]) - 1)
                         index_3vn_array.append(index_normal)
                         index_3v_array.append(index_vertex)
                     elif length == 4:
-                        iarr4v.append(int(face_parse[0]) - 1)
                         index_4vn_array.append(index_normal)
                         index_4v_array.append(index_vertex)
                     elif length > 4:
-                        tempI.append(int(face_parse[0]) - 1)
                         tempN.append(index_normal)
                         tempV.append(index_vertex)
                         if len(tempV) == length:
                             tempN = np.array(tempN, 'float32')
                             tempV = np.array(tempV, 'float32')
 
-                            iarrPoly.append(tempI)
                             index_polygonn_array.append(tempN)
                             index_polygon_array.append(tempV)
 
-                            tempI = []
                             tempN = []
                             tempV = []
 
-        adjacent = [[] for i in range(len(vertex_array))]
-        index_3v_array = np.array(index_3v_array, 'float32')
-        index_4v_array = np.array(index_4v_array, 'float32')
-
-
-        for i in range(0, len(index_3v_array), 3):
-            v1 = index_3v_array[i + 1] - index_3v_array[i]
-            v2 = index_3v_array[i + 2] - index_3v_array[i]
-
-            n = np.cross(v1, v2)
-            n = n / np.sqrt(np.dot(n, n))
-            for j in range(3):
-                adjacent[iarr3v[i + j]].append(n)
-        
-
-        for i in range(0, len(index_4v_array), 4):
-            v1 = index_4v_array[i + 1] - index_4v_array[i]
-            v2 = index_4v_array[i + 3] - index_4v_array[i]
-            
-            n = np.cross(v1, v2)
-            n = n / np.sqrt(np.dot(n, n))
-
-            for j in range(4):
-                adjacent[iarr4v[i + j]].append(n)
-
-        for i in range(len(index_polygon_array)):
-            for j in range(0, i, len(index_polygon_array[i])):
-                v1 = index_polygon_array[i][j + 1] - index_polygon_array[i][j]
-                v2 = index_polygon_array[i][j + len(index_polygon_array[i]) - 1] - index_polygon_array[i][j]
-                
-                n = np.cross(v1, v2)
-                n = n / np.sqrt(np.dot(n, n))
-
-                for k in range(len(index_polygon_array[i])):
-                    adjacent[iarrPoly[i][j + k]].append(n)
-        
-        for i in range(len(adjacent)):
-            sum = np.array([0, 0, 0], 'float32')
-            for j in range(len(adjacent[i])):
-                sum += adjacent[i][j]
-            sum = sum / np.sqrt(np.dot(sum, sum))
-            normal_cal.append(sum)
-
-        for i in iarr3v:
-            normal_cal_3v.append(normal_cal[i])
-        for i in iarr4v:
-            normal_cal_4v.append(normal_cal[i])
-        for i in iarrPoly:
-            tempN = []
-            for j in i:
-                tempN.append(normal_cal[j])
-            tempN = np.array(tempN, 'float32')
-            normal_cal_poly.append(tempN)
 
     gIndexArray3v = np.array(index_3v_array, 'float32')
     gIndexArray3vn = np.array(index_3vn_array, 'float32')
@@ -464,17 +322,14 @@ def obj_parse(path):
     gIndexArray4vn = np.array(index_4vn_array, 'float32')
     gIndexArrayPolygon = index_polygon_array
     gIndexArrayPolygonn = index_polygonn_array
-    gIndexArray3vnCal = np.array(normal_cal_3v, 'float32')
-    gIndexArray4vnCal = np.array(normal_cal_4v, 'float32')
-    gIndexArrayPolynCal = np.array(normal_cal_poly, 'float32')
-    
+
     print("File name: ", fileName)
     print("Total number of faces: ", total_face)
     print("Number of faces with 3 vertices: ", face_3v)
     print("Number of faces with 4 vertices: ", face_4v)
     print("Number of faces with more than 4 vertices: ", face_over_4, end="\n\n")
 
-    return (gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, gIndexArray3vnCal, gIndexArray4vnCal, gIndexArrayPolynCal)
+    return (gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn)
 
 def main():
     # Initialize the library
