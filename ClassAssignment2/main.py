@@ -51,6 +51,8 @@ def render():
         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
     else:
         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
+        
+    glLoadIdentity()
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
