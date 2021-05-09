@@ -190,6 +190,7 @@ def drawAnimation():
     glPushMatrix()
     glTranslatef(0, 1.5, 0)
     glRotatef(-50, 1, 0, 0)
+    glRotatef(t * (180/np.pi), 0, 0, 1)
     drawObject(animationObject[2])
     glPopMatrix()
     glPopMatrix()
@@ -207,6 +208,7 @@ def drawAnimation():
     glPushMatrix()
     glTranslatef(0, 1.5, 0)
     glRotatef(-50, 1, 0, 0)
+    glRotatef(t * (180/np.pi), 0, 0, 1)
     drawObject(animationObject[2])
     glPopMatrix()
     glPopMatrix()
@@ -224,6 +226,7 @@ def drawAnimation():
     glPushMatrix()
     glTranslatef(0, 1.5, 0)
     glRotatef(-50, 1, 0, 0)
+    glRotatef(t * (180/np.pi), 0, 0, 1)
     drawObject(animationObject[2])
     glPopMatrix()
     glPopMatrix()
@@ -241,6 +244,7 @@ def drawAnimation():
     glPushMatrix()
     glTranslatef(0, 1.5, 0)
     glRotatef(-50, 1, 0, 0)
+    glRotatef(t * (180/np.pi), 0, 0, 1)
     drawObject(animationObject[2])
     glPopMatrix()
     glPopMatrix()
@@ -317,9 +321,10 @@ def key_callback(window, key, scancode, action, mods):
                 shading = True
 
 def drop_callback(window, paths):
-    global gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, gIndexArray3vnCal, gIndexArray4vnCal, gIndexArrayPolynCal, drawFlag
+    global gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, gIndexArray3vnCal, gIndexArray4vnCal, gIndexArrayPolynCal, drawFlag, hierarchy
     gIndexArray3v, gIndexArray3vn, gIndexArray4v, gIndexArray4vn, gIndexArrayPolygon, gIndexArrayPolygonn, gIndexArray3vnCal, gIndexArray4vnCal, gIndexArrayPolynCal = obj_parse(paths[0])
     drawFlag = True
+    hierarchy = False
 
 def obj_parse(path):
     global shading
