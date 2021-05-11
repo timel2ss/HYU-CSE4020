@@ -103,7 +103,6 @@ def render(t):
     glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
     
     R1 = np.identity(4)
-    # my code
     th = t
     R1[:3, :3] = np.array([[np.cos(th), 0., np.sin(th)],
                            [0., 1., 0.,],
@@ -121,7 +120,6 @@ def render(t):
     glPopMatrix()
 
     R2 = np.identity(4)
-    # my code
     R2[:3, :3] = np.array([[1., 0., 0.],
                            [0., np.cos(th), -np.sin(th)],
                            [0., np.sin(th), np.cos(th)]])
