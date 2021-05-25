@@ -35,6 +35,8 @@ offsets = []
 channels = []
 frames = []
 joint_stack = []
+frame_cnt = 0
+curr_frame = 1
 
 animationObject = []
 
@@ -86,10 +88,10 @@ def render():
     drawFrame()
     drawGridOnXZplane()
 
-    if drawFlag == True:
-        drawObject()
+    drawObject()
 
 def drawObject():
+    global curr_frame
     offset_index = 0
     channel_index = 0
     for i in range(len(joint_stack)):
@@ -115,27 +117,32 @@ def drawObject():
             xpos = 0; ypos = 0; zpos = 0
             for j in range(len(channels[channel_index])):
                 if channels[channel_index][j][0] == XPOSITION:
-                    xpos = channels[channel_index][j][1]
+                    xpos = channels[channel_index][j][curr_frame]
                 elif channels[channel_index][j][0] == YPOSITION:
-                    ypos = channels[channel_index][j][1]
+                    ypos = channels[channel_index][j][curr_frame]
                 elif channels[channel_index][j][0] == ZPOSITION:
-                    zpos = channels[channel_index][j][1]
+                    zpos = channels[channel_index][j][curr_frame]
 
             if xpos != 0 and ypos != 0 and zpos != 0:
                 glTranslatef(xpos, ypos, zpos)
 
             for j in range(len(channels[channel_index])):
                 if channels[channel_index][j][0] == XROTATION:
-                    glRotatef(channels[channel_index][j][1], 1, 0, 0)
+                    glRotatef(channels[channel_index][j][curr_frame], 1, 0, 0)
                 elif channels[channel_index][j][0] == YROTATION:
-                    glRotatef(channels[channel_index][j][1], 0, 1, 0)
+                    glRotatef(channels[channel_index][j][curr_frame], 0, 1, 0)
                 elif channels[channel_index][j][0] == ZROTATION:
-                    glRotatef(channels[channel_index][j][1], 0, 0, 1)
+                    glRotatef(channels[channel_index][j][curr_frame], 0, 0, 1)
 
             channel_index += 1
 
         elif joint_stack[i] == '}':
             glPopMatrix()
+
+    if animate == True:
+        curr_frame = (curr_frame + 1) % (frame_cnt + 1)
+        if curr_frame == 0:
+            curr_frame += 1
 
 
 def drawGridOnXZplane():
@@ -203,7 +210,7 @@ def scroll_callback(window, xoffset, yoffset):
         zoom = 5
     
 def key_callback(window, key, scancode, action, mods):
-    global projection, animate, drawFlag
+    global projection, animate, curr_frame
     if action==glfw.PRESS or action==glfw.REPEAT:
         if key == glfw.KEY_V:
             if projection == True:
@@ -211,18 +218,22 @@ def key_callback(window, key, scancode, action, mods):
             else:
                 projection = True
         if key == glfw.KEY_SPACE:
-            animate = not animate
+            if animate == True:
+                animate = False
+                curr_frame = 1
+            else:
+                animate = True
 
 def drop_callback(window, paths):
-    global offsets, channels, frames, joint_stack, drawFlag
-    (offsets, channels, frames, joint_stack) = bvh_parse(paths[0])
-    drawFlag = True
+    global offsets, channels, frames, joint_stack, frame_cnt
+    (offsets, channels, frames, joint_stack, frame_cnt) = bvh_parse(paths[0])
 
 def bvh_parse(path):
     offsets = []
     channels = []
     frames = []
     joint_stack = []
+    frame_cnt = 0
 
     joint_names = []
     channel_cnt = 0
@@ -281,8 +292,11 @@ def bvh_parse(path):
                 FPS = 1 / float(partition[2])
             
             else:
-                frames.append(tuple(map(float, (partition[i] for i in range(channel_cnt)))))
-
+                t = 0
+                for i in range(len(channels)):
+                    for j in range(len(channels[i])):
+                        channels[i][j].append(float(partition[t]))
+                        t += 1
     
     print("File name: ", fileName)
     print("Number of frames: ", frame_cnt)
@@ -290,7 +304,7 @@ def bvh_parse(path):
     print("Number of joins: ", len(joint_names))
     print("List of all joint names: ", ' '.join(joint_names), end="\n\n")
 
-    return (offsets, channels, frames, joint_stack)
+    return (offsets, channels, frames, joint_stack, frame_cnt)
 
 def main():
     # Initialize the library
