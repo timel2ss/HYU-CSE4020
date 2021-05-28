@@ -1,4 +1,3 @@
-from numpy.core.shape_base import stack
 import glfw
 import numpy as np
 from OpenGL.GL import *
@@ -43,7 +42,7 @@ animationObject = []
 # True: perspective projection, False: orthogonal projection
 projection = True
 # True: solid mode, False: wireframe
-filled = False
+filled = True
 # True: animation on, False: animation off
 animate = False
 # True: smooth shading, False: using vn in obj file
@@ -88,7 +87,38 @@ def render():
     drawFrame()
     drawGridOnXZplane()
 
+    glEnable(GL_LIGHTING)
+    glEnable(GL_LIGHT0)
+    glEnable(GL_LIGHT1)
+    glEnable(GL_NORMALIZE)
+
+    lightPos0 = (5., 5., 5., 1.)
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos0)
+
+    lightColor0 = (1., 1., 0., 1.)
+    ambientLightColor0 = (.1, .1, 0., 1.)
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor0)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor0)
+
+    lightPos1 = (-5., 5., -5., 1.)
+    glLightfv(GL_LIGHT1, GL_POSITION, lightPos1)
+
+    lightColor1 = (0., 1., 1., 1.)
+    ambientLightColor1 = (0., .1, .1, 1.)
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor1)
+    glLightfv(GL_LIGHT1, GL_SPECULAR, lightColor1)
+    glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor1)
+
+    objectColor = (1., 1., 1., 1.)
+    specularObjectColor = (1., 1., 1., 1.)
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
+    glMaterialfv(GL_FRONT, GL_SHININESS, 10)
+    glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
+    
     drawObject()
+    
+    glDisable(GL_LIGHTING)
 
 def drawObject():
     global curr_frame
@@ -102,18 +132,18 @@ def drawObject():
             offset_index += 1
 
             if i != 0:
-                glBegin(GL_LINES)
+                # glBegin(GL_LINES)
                 glColor3ub(0, 255, 255)
-                glVertex3fv(np.array([0, 0, 0]))
-                glVertex3fv(offset)
-                glEnd()
+                # glVertex3fv(np.array([0, 0, 0]))
+                # glVertex3fv(offset)
+                # glEnd()
+                drawCube(offset)
             
             glTranslatef(offset[0], offset[1], offset[2])
 
             if joint_stack[i + 1] == '}':
                 continue
             
-
             xpos = 0; ypos = 0; zpos = 0
             for j in range(len(channels[channel_index])):
                 if channels[channel_index][j][0] == XPOSITION:
@@ -142,8 +172,88 @@ def drawObject():
     if animate == True:
         curr_frame = (curr_frame + 1) % (frame_cnt + 1)
         if curr_frame == 0:
-            curr_frame += 1
+            curr_frame += 2
 
+def drawCube(offset):
+    origin = np.array([0., 0., 0.])
+
+    v1 = origin - offset
+    v1 = v1 / (np.sqrt(np.dot(v1, v1)))
+
+    v2 = np.cross(v1, np.array([0., 1., 0.]))
+    if v2[0] == 0 and  v2[1] == 0 and v2[2] == 0:
+        v2 = np.cross(v1, np.array([0., 0., 1.]))
+    v2 = v2 / (np.sqrt(np.dot(v2, v2)))
+    v2 *= .05
+
+    v3 = np.cross(v1, v2)
+    v3 = v3 / (np.sqrt(np.dot(v3, v3)))
+    v3 *= .05
+
+    up = v3
+    height = v2
+
+    glBegin(GL_QUADS)
+    n1 = offset - origin
+    n2 = up
+    n = np.cross(n1, n2)
+    n = n / np.sqrt(np.dot(n, n))
+    glNormal3fv(n)
+    glVertex3fv(origin + up - height)
+    glVertex3fv(origin - up - height)
+    glVertex3fv(offset - up - height)
+    glVertex3fv(offset + up - height)
+
+    n1 = offset - origin
+    n2 = origin - up
+    n = np.cross(n1, n2)
+    n = n / np.sqrt(np.dot(n, n))
+    glNormal3fv(n)
+    glVertex3fv(origin - up + height)
+    glVertex3fv(origin + up + height)
+    glVertex3fv(offset + up + height)
+    glVertex3fv(offset - up + height)
+
+    n1 = height
+    n2 = origin - up
+    n = np.cross(n1, n2)
+    n = n / np.sqrt(np.dot(n, n))
+    glNormal3fv(n)
+    glVertex3fv(origin - up + height)
+    glVertex3fv(origin - up - height)
+    glVertex3fv(origin + up - height)
+    glVertex3fv(origin + up + height)
+
+    n1 = up
+    n2 = origin - height
+    n = np.cross(n1, n2)
+    n = n / np.sqrt(np.dot(n, n))
+    glNormal3fv(n)
+    glVertex3fv(offset - up - height)
+    glVertex3fv(offset - up + height)
+    glVertex3fv(offset + up + height)
+    glVertex3fv(offset + up - height)
+
+    n1 = origin - height
+    n2 = offset - origin
+    n = np.cross(n1, n2)
+    n = n / np.sqrt(np.dot(n, n))
+    glNormal3fv(n)
+    glVertex3fv(origin + up + height)
+    glVertex3fv(origin + up - height)
+    glVertex3fv(offset + up - height)
+    glVertex3fv(offset + up + height)
+
+    n1 = origin - height
+    n2 = origin - offset
+    n = np.cross(n1, n2)
+    n = n / np.sqrt(np.dot(n, n))
+    glNormal3fv(n)
+    glVertex3fv(origin - up - height)
+    glVertex3fv(origin - up + height)
+    glVertex3fv(offset - up + height)
+    glVertex3fv(offset - up - height)
+    glEnd()
 
 def drawGridOnXZplane():
     glBegin(GL_LINES)
@@ -167,7 +277,6 @@ def drawFrame():
     glVertex3fv(np.array([0.,0.,0.]))
     glVertex3fv(np.array([0.,0.,1.]))
     glEnd()
-
 
 def cursor_position_callback(window, xpos, ypos):
     global origin, up, azimuth, elevation, x_pos, y_pos
