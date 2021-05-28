@@ -89,35 +89,25 @@ def render():
 
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
-    glEnable(GL_LIGHT1)
     glEnable(GL_NORMALIZE)
 
-    lightPos0 = (5., 5., 5., 1.)
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos0)
+    lightPos = (3., 4., 5., 1.)
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos)
 
-    lightColor0 = (1., 1., 0., 1.)
-    ambientLightColor0 = (.1, .1, 0., 1.)
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0)
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor0)
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor0)
+    lightColor = (1., 1., 1., 1.)
+    ambientLightColor = (.1, .1, .1, 1.)
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
 
-    lightPos1 = (-5., 5., -5., 1.)
-    glLightfv(GL_LIGHT1, GL_POSITION, lightPos1)
-
-    lightColor1 = (0., 1., 1., 1.)
-    ambientLightColor1 = (0., .1, .1, 1.)
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor1)
-    glLightfv(GL_LIGHT1, GL_SPECULAR, lightColor1)
-    glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor1)
-
-    objectColor = (1., 1., 1., 1.)
+    objectColor = (0., 1., 1., 1.)
     specularObjectColor = (1., 1., 1., 1.)
     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, objectColor)
     glMaterialfv(GL_FRONT, GL_SHININESS, 10)
     glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
     
     drawObject()
-    
+
     glDisable(GL_LIGHTING)
 
 def drawObject():
