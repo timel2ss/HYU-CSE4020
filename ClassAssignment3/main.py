@@ -32,12 +32,9 @@ ZROTATION = 5
 
 offsets = []
 channels = []
-frames = []
 joint_stack = []
 frame_cnt = 0
 curr_frame = 1
-
-animationObject = []
 
 # True: perspective projection, False: orthogonal projection
 projection = True
@@ -45,8 +42,6 @@ projection = True
 filled = True
 # True: animation on, False: animation off
 animate = False
-# True: smooth shading, False: using vn in obj file
-shading = False
 
 def render():
     global u, v, w
@@ -91,7 +86,7 @@ def render():
     glEnable(GL_LIGHT0)
     glEnable(GL_NORMALIZE)
 
-    lightPos = (3., 4., 5., 1.)
+    lightPos = (5., 5., -5., 1.)
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos)
 
     lightColor = (1., 1., 1., 1.)
@@ -106,6 +101,9 @@ def render():
     glMaterialfv(GL_FRONT, GL_SHININESS, 10)
     glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
     
+    # glScalef is not for sample bvh files
+    # glScalef(.03, .03, .03)
+
     drawObject()
 
     glDisable(GL_LIGHTING)
@@ -122,11 +120,14 @@ def drawObject():
             offset_index += 1
 
             if i != 0:
+                # draw with line segment
                 # glBegin(GL_LINES)
-                glColor3ub(0, 255, 255)
+                # glColor3ub(0, 255, 255)
                 # glVertex3fv(np.array([0, 0, 0]))
                 # glVertex3fv(offset)
                 # glEnd()
+
+                # use a box to draw each body part
                 drawCube(offset)
             
             glTranslatef(offset[0], offset[1], offset[2])
@@ -324,13 +325,13 @@ def key_callback(window, key, scancode, action, mods):
                 animate = True
 
 def drop_callback(window, paths):
-    global offsets, channels, frames, joint_stack, frame_cnt
-    (offsets, channels, frames, joint_stack, frame_cnt) = bvh_parse(paths[0])
+    global offsets, channels, joint_stack, frame_cnt, curr_frame
+    curr_frame = 1
+    (offsets, channels, joint_stack, frame_cnt) = bvh_parse(paths[0])
 
 def bvh_parse(path):
     offsets = []
     channels = []
-    frames = []
     joint_stack = []
     frame_cnt = 0
 
@@ -369,18 +370,18 @@ def bvh_parse(path):
                 channel_cnt += int(partition[1])
 
                 for i in range(2, len(partition)):
-                    if partition[i] == "XPOSITION":
-                        channel.append([XPOSITION, 0.0])
-                    elif partition[i] == "YPOSITION":
-                        channel.append([YPOSITION, 0.0])
-                    elif partition[i] == "ZPOSITION":
-                        channel.append([ZPOSITION, 0.0])
-                    elif partition[i] == "XROTATION":
-                        channel.append([XROTATION, 0.0])
-                    elif partition[i] == "YROTATION":
-                        channel.append([YROTATION, 0.0])
-                    elif partition[i] == "ZROTATION":
-                        channel.append([ZROTATION, 0.0])
+                    if partition[i] == "XPOSITION" or partition[i] == "Xposition":
+                        channel.append([XPOSITION, 0.])
+                    elif partition[i] == "YPOSITION" or partition[i] == "Yposition" :
+                        channel.append([YPOSITION, 0.])
+                    elif partition[i] == "ZPOSITION" or partition[i] == "Zposition":
+                        channel.append([ZPOSITION, 0.])
+                    elif partition[i] == "XROTATION" or partition[i] == "Xrotation":
+                        channel.append([XROTATION, 0.])
+                    elif partition[i] == "YROTATION" or partition[i] == "Yrotation":
+                        channel.append([YROTATION, 0.])
+                    elif partition[i] == "ZROTATION" or partition[i] == "Zrotation":
+                        channel.append([ZROTATION, 0.])
                 channels.append(channel)
 
             # MOTION
@@ -403,7 +404,7 @@ def bvh_parse(path):
     print("Number of joins: ", len(joint_names))
     print("List of all joint names: ", ' '.join(joint_names), end="\n\n")
 
-    return (offsets, channels, frames, joint_stack, frame_cnt)
+    return (offsets, channels, joint_stack, frame_cnt)
 
 def main():
     # Initialize the library
